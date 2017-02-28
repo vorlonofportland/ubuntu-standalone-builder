@@ -167,6 +167,9 @@ def _get_ppa_snippet(ppa, ppa_key=None):
     elif ppa.startswith("ppa:"):
         # The simple case, we simply need to inject an "add-apt-repository"
         # command.
+        # If the ppa option has a pin priority, strip this out; this is
+        # only supported for the target image, not the build chroot.
+        ppa = ppa.rstrip(':0123456789')
         conf = '- chroot $CHROOT_ROOT add-apt-repository -y -u {}'.format(ppa)
     else:
         raise ValueError('The extra PPA url must be of the "ppa:foo/bar" form,'
