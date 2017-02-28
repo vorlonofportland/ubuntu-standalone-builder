@@ -30,7 +30,7 @@ runcmd:
 - {homedir}/launchpad-buildd/mount-chroot $BUILD_ID
 {ppa_conf}
 - {homedir}/launchpad-buildd/update-debian-chroot $BUILD_ID
-- {homedir}/launchpad-buildd/buildlivefs --arch amd64 --project ubuntu-cpc --series xenial --build-id $BUILD_ID --datestamp ubuntu-standalone-builder-$(date +%s)
+- {homedir}/launchpad-buildd/buildlivefs --arch amd64 --project ubuntu-cpc --series xenial --build-id $BUILD_ID {ppa_list} --datestamp ubuntu-standalone-builder-$(date +%s)
 - {homedir}/launchpad-buildd/umount-chroot $BUILD_ID
 - mkdir {homedir}/images
 - mv $CHROOT_ROOT/build/livecd.ubuntu-cpc.* {homedir}/images
@@ -119,6 +119,28 @@ mv /usr/sbin/grub-probe.dist /usr/sbin/grub-probe
 """
 
 
+def _get_ppa_list(ppa):
+    """
+    Depending on what string is passed as PPA, return an appropriate set
+    of commandline args for buildlivefs, ready to inject in TEMPLATE.
+
+    :param ppa:
+        The PPA URL. This should be either a "ppa:foo/bar" short form or a
+        full https:// URL for private PPAs.
+    """
+    if ppa.startswith("https://") and 'private-ppa' in ppa:
+        # This is likely a private ppa.  Don't output this into the target
+        # image.
+        return ""
+    elif ppa.startswith("ppa:"):
+        # The simple case, we simply need to inject an "add-apt-repository"
+        # command.
+        return '--extra-ppa {}'.format(ppa.strip('ppa:'))
+    else:
+        raise ValueError('The extra PPA url must be of the "ppa:foo/bar" form,'
+                         ' or be an "https://" URL pointing to a private PPA.')
+    return conf
+
 def _get_ppa_snippet(ppa, ppa_key=None):
     """
     Depending on what string is passed as PPA, return an appropriate yaml
@@ -192,11 +214,14 @@ def _write_cloud_config(output_file, binary_customisation_script=None,
         case.
     """
     ppa_snippet = ""
+    ppa_list = ""
     if ppa is not None:
         ppa_snippet = _get_ppa_snippet(ppa, ppa_key)
+        ppa_list = _get_ppa_list(ppa)
     if homedir is None:
         homedir = '/home/ubuntu'
-    output_string = TEMPLATE.format(ppa_conf=ppa_snippet, homedir=homedir)
+    output_string = TEMPLATE.format(ppa_conf=ppa_snippet, homedir=homedir,
+                                    ppa_list=ppa_list)
     write_files_stanzas = []
     for hook_type, script in (('chroot', customisation_script),
                               ('binary', binary_customisation_script)):
