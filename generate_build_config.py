@@ -164,7 +164,7 @@ def _get_ppa_snippet(ppa, ppa_key=None):
             raise ValueError("You must provide a --ppa-key parameter if using "
                              "a private PPA URL.")
         conf = PRIVATE_PPA_TEMPLATE.format(ppa_url=ppa, key_id=ppa_key)
-    elif ppa.startswith("ppa"):
+    elif ppa.startswith("ppa:"):
         # The simple case, we simply need to inject an "add-apt-repository"
         # command.
         conf = '- chroot $CHROOT_ROOT add-apt-repository -y -u {}'.format(ppa)
