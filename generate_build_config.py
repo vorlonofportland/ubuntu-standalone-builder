@@ -135,7 +135,7 @@ def _get_ppa_list(ppa):
     elif ppa.startswith("ppa:"):
         # The simple case, we simply need to inject an "add-apt-repository"
         # command.
-        return '--extra-ppa {}'.format(ppa.strip('ppa:'))
+        return '--extra-ppa {}'.format(ppa[4:])
     else:
         raise ValueError('The extra PPA url must be of the "ppa:foo/bar" form,'
                          ' or be an "https://" URL pointing to a private PPA.')
